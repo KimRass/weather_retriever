@@ -1,82 +1,42 @@
-# References:
-    # https://openweathermap.org/api/one-call-3
-    # https://openweathermap.org/weather-conditions
-
-import requests
-import json
-from datetime import datetime
+import re
 from collections import defaultdict, Counter
-import xmltodict
+
+from ner import NER
+from openweathermap import get_cur_date, request_loc, request_5days_weather
 from weather_codes import weather_codes, weather_translations
+from date import parse_date
 
 
-def get_cur_date():
-    cur_date = datetime.now().date()
-    return cur_date.strftime("%Y-%m-%d")
+def get_dates_and_cities(ner_out):
+    word = ""
+    words = []
+    for token in ner_out:
+        subword = token["word"]
+        pref, suff = token["entity"].split("-")
+        if suff not in ["DT", "LC"]:
+            continue
 
+        if pref == "I" and words:
+            word, prev_suff = words.pop()
+            if suff != prev_suff:
+                continue
 
-def read_api_key():
-    api_key_path = "/Users/jongbeomkim/Desktop/workspace/weather_api/resources/openweather_api_key.txt"
-    with open(api_key_path, mode="r") as f:
-        api_key = f.read().strip()
-    return api_key
+            if re.match(r"##(?!##)\S+", subword):
+                word += f"{subword[2:]}"
+            else:
+                word += f" {subword}"
+        elif pref == "B":
+            word = subword
+        words.append((word, suff))
 
-
-def request_loc(city, api_key=None, lim=1):
-    """
-    References:
-        https://openweathermap.org/api/geocoding-api
-    """
-    if api_key is None:
-        api_key = read_api_key()
-
-    url = f"http://api.openweathermap.org/geo/1.0/direct?q={city}&limit={lim}&appid={api_key}"
-    resp = requests.get(url)
-    result = json.loads(resp.text)
-    return result[0]["local_names"]["ko"], (result[0]["lat"], result[0]["lon"])
-
-
-def request_cur_weather(coord, api_key=None):
-    if api_key is None:
-        api_key = read_api_key()
-
-
-    # lang = "kr"
-    units = "metric"
-    
-    url = f"https://api.openweathermap.org/data/2.5/weather?lat={coord[0]}&lon={coord[1]}&appid={api_key}&units={units}"
-    resp = requests.get(url)
-    return json.loads(resp.text)
-
-
-def request_5days_weather(coord, date=None, api_key=None):
-    if date is None:
-        date = get_cur_date()
-    if api_key is None:
-        api_key = read_api_key()
-
-    # lang = "kr"
-    units = "metric"
-
-    url = f"https://api.openweathermap.org/data/2.5/forecast?lat={coord[0]}&lon={coord[1]}&appid={api_key}&units={units}"
-    resp = requests.get(url)
-    result = json.loads(resp.text)
-
-    weather_dict = {}
-    for i in result["list"]:
-        date, time = i["dt_txt"].split()
-        if date not in weather_dict:
-            weather_dict[date] = dict()
-        if time in ["06:00:00", "09:00:00", "12:00:00", "15:00:00"]:
-            time_split = "day"
+    dates = []
+    cities = []
+    for word, entity in words:
+        if entity == "DT":
+            dates.append(word)
         else:
-            time_split = "night"
-        if time_split not in weather_dict[date]:
-            weather_dict[date][time_split] = dict()
-        weather_dict[date][time_split][time] = {
-            "weather": i["weather"][0]["id"], "tempo": i["main"]["temp"],
-        }
-    return weather_dict
+            cities.append(word)
+    return dates, cities
 
 
 def get_avg_tempos(weather_dict, date):
@@ -93,14 +53,24 @@ def get_most_common_weathers(weather_dict, date):
         weather_translations[weather_codes[Counter(night_weathers).most_common(1)[0][0]]],
     )
 
+date_dict = {
+    
+}
+
 
 if __name__ == "__main__":
-    city = "Seoul"
-    city_ko, coord = request_loc(city)
-    cur_weather = request_cur_weather(coord)
-    cur_weather
-    weather_dict = request_5days_weather(coord)
-    date = "2024-11-02"
-    day_tempo, night_tempo = get_avg_tempos(weather_dict, date=date)
-    day_weather, night_weather = get_most_common_weathers(weather_dict, date=date)
-    f"{date}의 {city_ko}의 날씨를 말씀 드리겠습니다. 낮에는 평균 기온 {day_tempo}도의 {day_weather} 날씨가 되겠고, 밤에는 평균 기온 {night_tempo}도의 {night_weather} 날씨가 되겠습니다."
+    ner = NER()
+    text = "3일 후 시드니 날씨 알려줘."
+    ner_out = ner(text)
+    # ner_out = [{'entity': 'B-DT', 'score': 0.9855451, 'index': 1, 'word': '3', 'start': 0, 'end': 1}, {'entity': 'I-DT', 'score': 0.9825005, 'index': 2, 'word': '##일', 'start': 1, 'end': 2}, {'entity': 'I-DT', 'score': 0.97232145, 'index': 3, 'word': '후', 'start': 3, 'end': 4}, {'entity': 'B-LC', 'score': 0.9674333, 'index': 4, 'word': '시드니', 'start': 5, 'end': 8}]
+
+    cur_date = get_cur_date()
+    dates, cities = get_dates_and_cities(ner_out)
+    for city in cities:
+        city_ko, coord = request_loc(city)
+        weather_dict = request_5days_weather(coord)
+        for date in dates:
+            date = parse_date(date)
+            day_tempo, night_tempo = get_avg_tempos(weather_dict, date=date)
+            day_weather, night_weather = get_most_common_weathers(weather_dict, date=date)
+            f"{date}의 {city_ko}의 날씨를 말씀 드리겠습니다. 낮에는 평균 기온 {day_tempo}도의 {day_weather} 날씨가 되겠고, 밤에는 평균 기온 {night_tempo}도의 {night_weather} 날씨가 되겠습니다."
