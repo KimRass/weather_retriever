@@ -7,5 +7,7 @@ lib/
 lib64
 pyvenv.cfg
 share/
-openweather_api_key.txt
+openweathermap_api_key.txt
 openai_api_key.txt
+llm.py
+openai.py
