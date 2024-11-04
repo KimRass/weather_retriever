@@ -2,7 +2,7 @@
 weather_codes = {
     200: {
         "def": "thunderstorm with light rain",
-        "translation": "가벼운 비를 동반한 뇌우"
+        "translation": "가벼운 비를 동반한 뇌우",
     },
     201: {
         "def": "thunderstorm with rain",

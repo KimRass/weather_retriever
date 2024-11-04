@@ -4,8 +4,7 @@ import re
 
 
 def get_cur_date():
-    cur_date = datetime.now().date()
-    return cur_date.strftime("%Y-%m-%d")
+    return datetime.now().strftime("%Y-%m-%d")
 
 
 def ko_to_en_date_expr(text_date):

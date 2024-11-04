@@ -11,3 +11,6 @@ openweathermap_api_key.txt
 openai_api_key.txt
 llm.py
 openai.py
+weather_retriever.egg-info
+Dockerfile
+utils.py
