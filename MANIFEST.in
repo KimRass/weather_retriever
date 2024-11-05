@@ -1,1 +1,4 @@
-include resources/city_coords.json
+include README.md
+include LICENSE
+include requirements.txt
+include weather_retriever/resources/city_coords.json

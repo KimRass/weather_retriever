@@ -9,7 +9,7 @@ from weather_retriever.hangul import has_batchim, replace_time_words
 
 class WeatherRetriever(object):
     def __init__(self, owm_api_key):
-        self.city_coord_path = Path.home()/".weather-retriever/city_coords.json"
+        self.city_coord_path = Path.home()/".weather_retriever/city_coords.json"
         self.city_coords = self.load_city_coords()
         self.ner = NER()
         self.owm = OpenWeatherMap(owm_api_key=owm_api_key)
