@@ -32,7 +32,9 @@ class WeatherRetriever(object):
             json.dump(self.city_coords, f, ensure_ascii=False, indent=4)
 
     def get_city_coords(self, city):
-        """Retrieve the coordinates for a given city."""
+        """
+        Retrieve the coordinates for a given city.
+        """
         if city in self.city_coords:
             return city, self.city_coords[city]
         city_ko, coord = self.owm.request_coord(city)
@@ -42,7 +44,9 @@ class WeatherRetriever(object):
         return city_ko, coord
 
     def format_weather_response(self, date, city, avg_tempos, weathers):
-        """Format the weather response text."""
+        """
+        Format the weather response text.
+        """
         ko_date = hyphen_to_ko_date_expr(date)
         jugyeokjosa1 = "이" if has_batchim(weathers[0][-1]) else "가"
         
@@ -60,7 +64,9 @@ class WeatherRetriever(object):
         )
 
     def process_weather_dates(self, text_dates, weather_dict, city_ko):
-        """Process weather information for each date and return formatted strings."""
+        """
+        Process weather information for each date and return formatted strings.
+        """
         responses = []
         for text_date in text_dates:
             date = ko_date_expr_to_date(text_date)
@@ -76,7 +82,9 @@ class WeatherRetriever(object):
         return responses
 
     def query(self, query, print_ner_output=False):
-        """Process the weather query and return a formatted response."""
+        """
+        Process the weather query and return a formatted response.
+        """
         query = replace_time_words(query)
         ner_out = self.ner(query)
         if print_ner_output:
