@@ -1,11 +1,16 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 import pytest
 import json
 import requests
-from unittest.mock import patch
-from src import WeatherRetriever
+from unittest.mock import patch, MagicMock, mock_open
+
+from weather_retriever import WeatherRetriever
 
 
-class TestOpenWeatherMap(object):
+class TestWeatherRetriever(object):
     @pytest.fixture
     def weather_retriever(self):
         wr = WeatherRetriever(owm_api_key="mock_owm_api_key")
@@ -123,3 +128,70 @@ class TestOpenWeatherMap(object):
         )
         assert day is None
         assert night is None
+
+    @patch("builtins.open", new_callable=mock_open, read_data='{"서울": [37.5665, 126.978]}')
+    def test_load_city_coords_file_exists(self, mock_open, weather_retriever):
+        """
+        The `@patch`` decorator is used to replace the built-in `open` function with a
+        `mock_open`. This mock version simulates reading a file without actually needing to
+        create a physical file on the filesystem.
+        """
+        city_coords = weather_retriever.load_city_coords()
+        assert city_coords == {"서울": [37.5665, 126.978]}
+        # Asserts that `open` was called exactly once.
+        mock_open.assert_called_once_with(
+            weather_retriever.city_coord_path, mode="r", encoding="utf-8",
+        )
+
+    @patch("pathlib.Path.exists", return_value=False)
+    def test_load_city_coords_file_not_exist(self, mock_exists, weather_retriever):
+        """
+        By mocking `Path.exists` to always return `False`, this test simulates the scenario
+        where the city coordinates file does not exist.
+        """
+        city_coords = weather_retriever.load_city_coords()
+        assert city_coords == {}
+
+    @patch("requests.get")
+    @patch.object(WeatherRetriever, 'save_city_coords')
+    def test_get_city_coords_existing_city(self, mock_save, mock_get, weather_retriever):
+        # Simulate a city that exists in city_coords
+        weather_retriever.city_coords = {"mock_city": ("mock_lat", "mock_lon")}
+        city_ko, coord = weather_retriever.get_city_coords("mock_city")
+        assert city_ko == "mock_city"
+        assert coord == ("mock_lat", "mock_lon")
+        mock_save.assert_not_called()  # Ensure save is not called since city exists
+
+    @patch("requests.get")
+    def test_get_city_coords_new_city(self, mock_get, weather_retriever):
+        # Simulate a new city request
+        mock_get.return_value.json.return_value = [
+            {
+                "local_names": {"ko": "new_city_ko"},
+                "lat": "new_lat",
+                "lon": "new_lon",
+            }
+        ]
+        city_ko, coord = weather_retriever.get_city_coords("new_city")
+        assert city_ko == "new_city_ko"
+        assert coord == ("new_lat", "new_lon")
+        assert "new_city_ko" in weather_retriever.city_coords  # Ensure new city is saved
+
+    def test_format_weather_response_same_weather(self, weather_retriever):
+        date = "2024-11-01"
+        city = "mock_city"
+        avg_tempos = [20, 10]
+        weathers = ["가벼운 비를 동반한 뇌우", "가벼운 비를 동반한 뇌우"]
+        response = weather_retriever.format_weather_response(date, city, avg_tempos, weathers)
+        
+        assert "2024년 11월 01일" in response
+        assert city in response
+        assert "하루 종일" in response
+        assert "평균 기온은 낮 20도, 밤 10도입니다." in response
+
+    def test_process_weather_dates_with_invalid_dates(self, weather_retriever):
+        text_dates = ["2024년 11월 1일", "2024년 11월 3일"]
+        weather_dict = {}
+        responses = weather_retriever.process_weather_dates(text_dates, weather_dict, "mock_city")
+        assert len(responses) == 2  # One valid date and one invalid date
+        assert responses[1] == "죄송합니다. 오늘로부터 최대 5일 후의 날씨만 알려드릴 수 있습니다."

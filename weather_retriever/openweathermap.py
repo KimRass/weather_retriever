@@ -2,8 +2,8 @@ import requests
 import json
 from collections import Counter
 
-from src.date import get_cur_date
-from src.weather_codes import weather_codes
+from weather_retriever.date import get_cur_date
+from weather_retriever.weather_codes import weather_codes
 
 
 class OpenWeatherMap(object):
@@ -24,7 +24,6 @@ class OpenWeatherMap(object):
         Returns:
             tuple: The city name in Korean (if available) and a tuple of (latitude, longitude). Returns (city, None) if no results are found.
         """
-
         url = (
             f"http://api.openweathermap.org/geo/1.0/direct"
             f"?q={city}&limit={lim}&appid={self.owm_api_key}"
@@ -68,7 +67,6 @@ class OpenWeatherMap(object):
             resp = requests.get(url)
             resp.raise_for_status()
             result = json.loads(resp.text)
-            print(result)
 
             weather_dict = {}
             for item in result.get("list", []):

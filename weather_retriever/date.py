@@ -8,6 +8,12 @@ def get_cur_date():
 
 
 def ko_to_en_date_expr(text_date):
+    text_date = re.sub(
+        r"'?(\d{2,4})년 (\d{1,2})월 (\d{1,2})일",
+        lambda m: f"{(2000 + int(m.group(1)) if len(m.group(1)) == 2 else int(m.group(1))):04d}-{int(m.group(2)):02d}-{int(m.group(3)):02d}",
+        text_date
+    )
+
     # Convert common Korean expressions to a more recognizable format
     conversions = {
         "오늘": "now",
@@ -28,7 +34,6 @@ def ko_to_en_date_expr(text_date):
         "나흘 후": "4 days later",
         "그글피": "4 days later",
     }
-    
     # Replace Korean date expressions with English equivalents
     for pattern, replacement in conversions.items():
         text_date = re.sub(pattern, replacement, text_date)
@@ -46,13 +51,13 @@ def ko_date_expr_to_date(text_date):
         return "Invalid date format"
 
 
-def hyphen_date_to_ko(date):
+def hyphen_to_ko_date_expr(date):
     y, m, d = date.split("-")
     return f"{y}년 {m}월 {d}일"
 
 
 if __name__ == "__main__":
-    user_inputs = ["3일 후", "나흘 뒤", "5일 후", "5일 뒤"]
+    user_inputs = ["3일 후", "나흘 뒤", "5일 후", "5일 뒤", "24년 11월 3일"]
     for input_input in user_inputs:
         result = ko_date_expr_to_date(input_input)
         print(f"{input_input}  {result}")
