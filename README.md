@@ -10,7 +10,7 @@
 
 ## Building the Package
 1. Prepare for Packaging:
-    - Ensure the city coordinate file is saved correctly in '~/.weather-retriever'.
+    - Ensure the city coordinate file is saved correctly in '~/.weather_retriever'.
 2. Create a Distribution:
     - Build the package using `setuptools`:
     ```bash
@@ -28,14 +28,14 @@
 You can install WeatherRetriever in two ways:
 1. Install via PyPI:
     ```bash
-    # https://pypi.org/project/weather-retriever/0.1.1/
-    pip install weather-retriever
+    # https://pypi.org/project/weather_retriever/0.1.13/
+    pip install weather_retriever
     ```
     - This method allows you to install the package directly from PyPI.
 2. Install from GitHub:
     ```bash
-    git clone https://github.com/KimRass/weather-retriever
-    cd weather-retriever
+    git clone https://github.com/KimRass/weather_retriever
+    cd weather_retriever
     pip install .
     ```
     - This method is useful if you want to access the latest code or contribute to the project.
@@ -64,7 +64,7 @@ print(response)
 - "뉴욕 날씨를 알려주세요. 내일과 모레에 대해서."
 
 ### File Handling
-- The package saves city coordinate data in '~/.weather-retriever/city_coords.json' to cache information for efficient lookups.
+- The package saves city coordinate data in '~/.weather_retriever/city_coords.json' to cache information for efficient lookups.
 - The `pathlib` library is used for managing file and directory operations.
 
 ## Testing
