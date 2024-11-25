@@ -14,7 +14,6 @@ openai.py
 weather_retriever.egg-info
 Dockerfile
 utils.py
-main.py
 venv/
 .pytest_cache
 build/

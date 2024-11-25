@@ -27,7 +27,7 @@ def requirements():
 if __name__ == "__main__":
     setup(
         name="weather_retriever",
-        version="0.1.13",
+        version="0.0.14",
         packages=find_packages(),
         install_requires=requirements(),
         include_package_data=True,  # Include files specified in 'MANIFEST.in'.
